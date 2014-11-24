@@ -1,0 +1,294 @@
+/*
+Evil Hangman is an assignment in which students write a computer program that 
+cheats at the classic game Hangman. Normally, when writing a computerto play 
+Hangman, the computer picks a single word and accurately representsit as the
+human player tries to guess all of the letters in the word. In Evil Hangman,
+the computer instead maintains a list of every word in the English language,
+then continuously pares down the word list to try to dodge the player's guesses
+as much as possible. Human players tend to fare terribly against this conniving
+silicon foe!
+
+Source of assignment:http://nifty.stanford.edu/2011/schwarz-evil-hangman/
+Requires dictionary.txt which can be downloaded from website above
+*/
+
+import java.io.*;
+import java.util.*;
+
+
+public class Game {
+
+	/**
+	 * @param args
+	 * @throws IOException 
+	 */
+	public static void main(String[] args) throws IOException {
+		// get words from list
+		// get number
+		// get letter
+		// check word for letter, if list
+		System.out.println("Welcome to Hangman!");
+		System.out.println();
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		boolean playagain = true;
+		while(playagain){
+			List<WordList> listofWordLists = new ArrayList<WordList>();
+			List<String> masterWordList = new ArrayList<String>();
+			System.out.print("Please enter word length: ");
+			String l = br.readLine();
+			
+			
+			while(!isInteger(l)){
+				System.out.print("There are no words with that length. Please try again: ");
+				l = (br.readLine());
+			}
+			int length= Integer.parseInt(l);
+			System.out.print("Please enter the number of guesses: ");
+			l = br.readLine();
+			while(!isGuess(l)){
+				System.out.print("That is not a valid number. Please try again: ");
+				l = (br.readLine());
+			}
+			int guesses = Integer.parseInt(l);
+			masterWordList = getDict(length);
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i<length; i++){
+				sb.append('-');
+			}
+			List<Character> usedChars = new ArrayList<Character>();
+			while(guesses != 0){
+				System.out.println("You have " + guesses + " guess(es) left.");
+				System.out.print("Used Characters: ");
+				for(int i = 0; i<usedChars.size(); i++){
+					System.out.print(usedChars.get(i) + " ");
+				}
+				System.out.println();
+				System.out.println("Word: " + sb.toString());
+				System.out.print("Please enter a letter: ");
+				String re = br.readLine();
+				char c = checkChar(re);
+				while(checkLetter(c, usedChars)){
+					System.out.println("You have already used that letter. Enter another letter.");
+					System.out.print("Please enter a letter: ");
+					c = checkChar(br.readLine());
+				}
+				usedChars.add(c);
+				Collections.sort(usedChars);
+				listofWordLists = findWordLists(masterWordList, c);
+				int max = 0;
+				int maxindex = 0;
+				for(int i = 0; i < listofWordLists.size(); i++){
+					int cur = listofWordLists.get(i).list.size();
+					if(cur > max){
+						max = cur;
+						masterWordList = listofWordLists.get(i).list;
+						maxindex = i;
+					}
+				}
+				if(listofWordLists.get(maxindex).change){
+					int occ = listofWordLists.get(maxindex).numOcc;
+					if(occ == 1){
+						System.out.println("There is 1 " + c + ".");
+					}
+					else{
+						System.out.println("There are " + occ + " " + c + "'s.");
+					}
+					for(int i = 0; i < length; i++){
+						if(listofWordLists.get(maxindex).letterPos[i]){
+							sb.replace(i, i+1, Character.toString(c));
+						}
+					}
+					
+				}
+				else{
+					System.out.println("Sorry. There are no " + c + "'s.");
+					guesses--;
+				}
+				System.out.println();
+				System.out.println();
+				if(checkWord(sb)){
+					break;
+				}
+			}
+			System.out.println();
+			System.out.println();
+		    Random generator = new Random();
+		    if(checkWord(sb)){
+		    	playagain = gameOver(true, sb.toString());
+		    }
+		    else{
+		    	playagain = gameOver(false, masterWordList.get(generator.nextInt(masterWordList.size())));
+		    }
+		}
+		br.close();
+	}
+	
+	private static boolean isInteger(String l) {
+		// TODO Auto-generated method stub
+		try{
+			int length = Integer.parseInt(l);
+			if(!(length <= 1 || length == 26 || length == 27 || length > 29)){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		catch(Exception e){
+			return false;
+		}
+	}
+	private static boolean isGuess(String l) {
+		// TODO Auto-generated method stub
+		try{
+			int length = Integer.parseInt(l);
+			if(!(length <= 0)){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		catch(Exception e){
+			return false;
+		}
+	}
+	private static boolean checkLetter(char l, List<Character> usedChars){
+		for(int i = 0; i < usedChars.size(); i++){
+			if(usedChars.get(i) == l){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private static boolean gameOver(boolean b, String sb) throws IOException {
+		if(b){
+			System.out.println("Congratulations! You Won! The word was " + sb + ".");
+		}
+		else{
+			System.out.println("Sorry, you lost. The word was " + sb + ".");
+		}
+		System.out.print("Would you like to play again?: ");
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		String response = br.readLine();
+		while(!response.equalsIgnoreCase("y") && !response.equalsIgnoreCase("t") && !response.equalsIgnoreCase("yes") && !response.equalsIgnoreCase("true") && !response.equalsIgnoreCase("n") && !response.equalsIgnoreCase("f") && !response.equalsIgnoreCase("no") && !response.equalsIgnoreCase("false")){
+			System.out.println("I am sorry. I don't understand that response. Please type yes or no.");
+			System.out.println();
+			System.out.print("Would you like to play again?: ");
+			response = br.readLine();
+		}
+		if(response.equalsIgnoreCase("y") || response.equalsIgnoreCase("t") || response.equalsIgnoreCase("yes") || response.equalsIgnoreCase("true")){
+			System.out.println();
+			System.out.println();
+			return true;
+		}
+		else{
+			System.out.println();
+			System.out.println("Thank you for playing! Goodbye.");
+			return false;
+		}
+	}
+
+	public static boolean checkWord(StringBuilder sb){
+		for(int i = 0; i<sb.length(); i++){
+			if(sb.charAt(i)== '-'){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public static List<WordList> findWordLists(List<String> masterWordList, char c){
+		List<WordList> listofWordLists = new ArrayList<WordList>();
+		for (int i = 0; i < masterWordList.size(); i++){
+			if(! checkWordLists(masterWordList.get(i), listofWordLists)){
+				WordList x = new WordList(masterWordList.get(i), c);
+				x.addWord(masterWordList.get(i));
+				listofWordLists.add(x);
+			}
+		}
+		return listofWordLists;
+	}
+	
+	public static List<String> getDict(int n) throws IOException{
+		BufferedReader f = new BufferedReader(new FileReader("dictionary.txt"));
+		List<String> dict = new ArrayList<String>();
+		String word = f.readLine();
+		while(word != null){
+			if(word.length() == n){
+				dict.add(word);
+			}
+			word = f.readLine();
+		}
+		f.close();
+		return dict;
+	}
+	
+	public static boolean checkWordLists(String word, List<WordList> lists){
+		for (int i = 0; i< lists.size(); i++){
+			if(lists.get(i).isInWordList(word)){
+				lists.get(i).addWord(word);
+				return true;
+			}
+		}
+		return false;
+	}
+	private static char checkChar(String re) throws IOException{
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		while(re.length() != 1 || !Character.isLetter(re.charAt(0))){
+			System.out.println("That is not a letter. Try again.");
+			System.out.print("Please enter a letter: ");
+			re = br.readLine();
+		}
+		return Character.toLowerCase(re.charAt(0));
+	}
+
+}
+
+
+public class WordList {
+	
+	int length = 0;
+	boolean[] letterPos;
+	ArrayList<String> list = new ArrayList<String>();
+	char letter;
+	boolean change = false; // If there is a change, it will be true
+	int numOcc = 0;
+	public WordList(String s, char l){
+		length = s.length();
+		letter = l;
+		letterPos = new boolean[length];
+		for (int i = 0; i< length; i++){
+			if(l == s.charAt(i)){
+				letterPos[i] = true;
+			}
+			else {letterPos[i] = false;}
+		}
+		for(int i = 0; i < letterPos.length; i++){
+			if(letterPos[i]){
+				change = true;
+				numOcc++;
+			}
+		}
+	}
+	
+	public boolean isInWordList(String word){
+		boolean [] temp = new boolean[word.length()];
+		for (int i = 0; i< length; i++){
+			if (letter == word.charAt(i)){
+				temp[i] = true;
+			}
+			else{ temp[i] = false;}
+		}
+		if(Arrays.equals(temp, letterPos)){
+			return true;
+		}
+		else{return false;}
+	}
+	public void addWord(String word){
+		list.add(word);
+	}
+	
+
+}
