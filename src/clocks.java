@@ -11,11 +11,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.StringTokenizer;
 
-/*
- ID: leonluc1
- PROG: clocks
- LANG: JAVA
- */
+
 
 // Improvement:
 // 1. apply smaller moves first by repeating 3..0 instead of 0...3
